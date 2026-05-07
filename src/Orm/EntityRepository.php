@@ -261,7 +261,26 @@ final readonly class EntityRepository implements EntityRepositoryInterface
     {
         $searchablePropertiesConfig = [];
         $configuredSearchableProperties = $searchDto->getSearchableProperties();
+
+        $excludedSearchableFilds = [];
+        if (is_array($configuredSearchableProperties)) {
+            foreach ($configuredSearchableProperties as $field) {
+                if (str_starts_with($field, '-')) {
+                    $excludedSearchableFilds[] = substr($field, 1);
+                }
+            }
+
+            if (count($excludedSearchableFilds) > 0) {
+                if (count($excludedSearchableFilds) !== count($configuredSearchableProperties)) {
+                    throw new \InvalidArgumentException('The setSearchFields() method accepts either only included values or only excluded values (prefixed with \'-\'), but not both.');
+                } else {
+                    $configuredSearchableProperties = [];
+                }
+            }
+        }
+        
         $searchableProperties = (null === $configuredSearchableProperties || 0 === \count($configuredSearchableProperties)) ? $entityDto->getClassMetadata()->getFieldNames() : $configuredSearchableProperties;
+        $searchableProperties = array_diff($searchableProperties, $excludedSearchableFilds);
 
         $entitiesAlreadyJoined = [];
         foreach ($searchableProperties as $searchableProperty) {
